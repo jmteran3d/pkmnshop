@@ -1,8 +1,7 @@
 export const auth = (req, res, next) => {
-  let { user, password } = req.query;
-  if (user != "admin" || password != "123456") {
+  if (!req.session.usuario) {
     res.setHeader("Content-Type", "application/json");
-    return res.status(403).json({ error: `No autorizado` });
+    return res.status(401).json({ error: `No hay usuarios autenticados` });
   }
 
   next();

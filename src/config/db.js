@@ -1,16 +1,13 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
-export const conectarDB=(url, dbName)=>{
-    try {
-        mongoose.connect(
-            url,
-            {
-                // dbName: dbName,
-                dbName
-            }
-        )
-        console.log(`DB online...!!!`)
-    } catch (error) {
-        console.log(`Error al conectar a DB: ${error.message}`)
-    }
-}
+export const conectarDB = (url, dbName) => {
+  try {
+    mongoose.connect(url, {
+      // dbName: dbName,
+      dbName,
+    });
+    console.log(`Conectado con MongoDB!`);
+  } catch (error) {
+    console.log(`Error al conectar con MongoDB: ${error.message}`);
+  }
+};
