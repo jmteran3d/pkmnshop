@@ -1,14 +1,19 @@
 <h2>Registro</h2>
 <hr>
 <form action="/api/sessions/registro" method="post">
-    <input type="text" name="nombre" id="nombre" placeholder="Nombre">
-    <input type="text" name="apellido" id="apellido" placeholder="Apellido">
-    <input type="email" name="email" id="email" placeholder="Correo electrónico">
-    <input type="password" name="password" id="password" placeholder="Contraseña">
+    <input type="text" name="first_name" id="first_name" placeholder="Nombre" required>
+    <input type="text" name="last_name" id="last_name" placeholder="Apellido" required>
+    <input type="email" name="email" id="email" placeholder="Correo electrónico" required>
+    <input type="number" name="age" id="age" placeholder="Edad" min="0" value="0">
+    <input type="password" name="password" id="password" placeholder="Contraseña" required>
+    
+    <label for="role">Rol:</label>
+    <select name="role" id="role">
+        <option value="user" selected>Usuario</option>
+        <option value="admin">Admin</option>
+    </select>
 
     <input type="submit" value="Registrar">
-
 </form>
-
 
 {{>menu}}

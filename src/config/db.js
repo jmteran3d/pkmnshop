@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
-import { config } from "./config.js";
-config
+import { env } from "./env.js";
 
 export const conectarDB = async () => {
   try {
-    await mongoose.connect(config.MONGO_URL, {dbName:config.DB_NAME});
+    mongoose.set('strictQuery', true);
+    await mongoose.connect(env.MONGO_URL, {dbName:env.DB_NAME});
     console.log(`Conectado con MongoDB establecida!`);
   } catch (error) {
     console.log(`Error al conectar con MongoDB: ${error.message}`);

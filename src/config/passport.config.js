@@ -1,10 +1,19 @@
 import passport from "passport";
+import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 // import {Strategy as LocalStrategy} from "passport-local"
 import local from "passport-local";
 import bcrypt from "bcrypt";
 import { usuariosModelo } from "../models/usuario.model.js";
+import { env } from './env.js';
+
+// Extrae JWT desde cookie httpOnly o desde Authorization: Bearer <token>
+const cookieExtractor = (req) => {
+  if (req && req.cookies && req.cookies.jwt) return req.cookies.jwt;
+  return null;
+};
 
 export const iniciarPassport = () => {
+  const extractors = [cookieExtractor, ExtractJwt.fromAuthHeaderAsBearerToken()];
   // paso 1:
   passport.use(
     "registro",
@@ -66,6 +75,26 @@ export const iniciarPassport = () => {
     )
   );
 
+  passport.use(
+    'jwt',
+    new JwtStrategy(
+      {
+        secretOrKey: env.JWT_SECRET,
+        jwtFromRequest: ExtractJwt.fromExtractors(extractors)
+      },
+      async (payload, done) => {
+        try {
+          // payload: { uid, email, role, ... }
+          const usuario = await usuariosModelo.findById(payload.uid).lean();
+          if (!usuario) return done(null, false, { message: 'Usuario no encontrado' });
+          return done(null, usuario);
+        } catch (err) {
+          return done(err, false);
+        }
+      }
+    )
+  );
+
   // paso 1' o 1b)   solo si uso sessions
   passport.serializeUser((user, done) => {
     return done(null, user);
@@ -75,3 +104,5 @@ export const iniciarPassport = () => {
     return done(null, user);
   });
 };
+
+

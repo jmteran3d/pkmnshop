@@ -1,47 +1,81 @@
 import { Router } from "express";
-import { UsuariosManager } from "../dao/UsuariosManager.js";
-import { auth } from "../middleware/auth.js";
+import { usuariosModelo } from "../models/usuario.model.js";
+import { auth, authJWT, authorizeRoles } from "../middleware/auth.js";
+import { hashPassword } from "../utils/hash.js";
 
 export const router = Router();
 
-router.get("/", (req, res) => {
-  let usuarios = UsuariosManager.get();
-
-  res.setHeader("Content-Type", "application/json");
-  res.status(200).json({ payload: usuarios });
-});
-
-router.post("/", auth, (req, res) => {
-  let { nombre, email } = req.body;
-  if (!nombre || !email) {
-    res.setHeader("Content-Type", "application/json");
-    return res.status(400).json({ error: `nombre / email son requeridos` });
-  }
-
-  // resto validaciones pertinentes
+// Listar usuarios (solo admin)
+router.get('/', authJWT, authorizeRoles('admin'), async (req, res) => {
   try {
-    let nuevoUsuario = UsuariosManager.create({ nombre, email });
-
-    res.setHeader("Content-Type", "application/json");
-    return res
-      .status(201)
-      .json({ payload: nuevoUsuario, message: `Usuario generado con éxito` });
+    const users = await usuariosModelo.find().select('-password');
+    res.json({ status: 'success', payload: users });
   } catch (error) {
-    res.setHeader("Content-Type", "application/json");
-    return res.status(500).json({ error: `Error interno del servidor` });
+    res.status(500).json({ status: 'error', error: 'Error al obtener usuarios' });
   }
 });
 
-router.delete(
-  "/:id",
-  auth,
-  (req, res) => {
-    // let id=req.params.id
-    let { id } = req.params;
-
-    res.setHeader("Content-Type", "application/json");
-    return res
-      .status(200)
-      .json({ payload: `Se eliminó el usuario con id ${id}` });
+// Obtener por id (autenticado)
+router.get('/:id', authJWT, async (req, res) => {
+  try {
+    const user = await usuariosModelo.findById(req.params.id).select('-password');
+    if (!user) return res.status(404).json({ status: 'error', error: 'Usuario no encontrado' });
+    res.json({ status: 'success', payload: user });
+  } catch (error) {
+    res.status(500).json({ status: 'error', error: 'Error al obtener usuario' });
   }
-);
+});
+
+// Crear (admin)
+router.post('/', authJWT, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const { first_name, last_name, email, age, password, role } = req.body;
+    if (!first_name || !last_name || !email || !password) {
+      return res.status(400).json({ status: 'error', error: 'Campos obligatorios faltantes' });
+    }
+
+    const exists = await usuariosModelo.findOne({ email });
+    if (exists) return res.status(409).json({ status: 'error', error: 'Email ya registrado' });
+
+    const user = await usuariosModelo.create({
+      first_name,
+      last_name,
+      email,
+      age: age ?? 0,
+      password: hashPassword(password),
+      role: role ?? 'user'
+    });
+
+    res.status(201).json({ status: 'success', payload: { _id: user._id } });
+  } catch (error) {
+    res.status(500).json({ status: 'error', error: 'Error al crear usuario' });
+  }
+});
+
+// Actualizar (admin)
+router.put('/:id', authJWT, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const { password, ...rest } = req.body;
+    const update = { ...rest };
+    if (password) update.password = hashPassword(password);
+
+    const user = await usuariosModelo.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!user) return res.status(404).json({ status: 'error', error: 'Usuario no encontrado' });
+
+    res.json({ status: 'success', payload: { _id: user._id } });
+  } catch (error) {
+    res.status(500).json({ status: 'error', error: 'Error al actualizar usuario' });
+  }
+});
+
+// Eliminar (admin)
+router.delete('/:id', authJWT, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const result = await usuariosModelo.findByIdAndDelete(req.params.id);
+    if (!result) return res.status(404).json({ status: 'error', error: 'Usuario no encontrado' });
+
+    res.json({ status: 'success', message: 'Usuario eliminado' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', error: 'Error al eliminar usuario' });
+  }
+});

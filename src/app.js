@@ -1,22 +1,32 @@
 import express from "express";
-import { logger } from "./middleware/log.js";
+import cookieParser from "cookie-parser";
+import passport from "passport";
+import { engine } from "express-handlebars";
+import path from "path";
+import { fileURLToPath } from 'url';
+
+
+import { conectarDB } from "./config/db.js";
+import { env } from "./config/env.js";
+import { iniciarPassport } from "./config/passport.config.js";
+
+// Routers API
 import { router as usuariosRouter } from "./routes/usuariosRouter.js";
 import { router as clientesRouter } from "./routes/clientesRouter.js";
 import { router as cookiesRouter } from "./routes/cookiesRouter.js";
 import { router as sessionsRouter } from "./routes/sessions.router.js";
 import { router as productsRouter } from "./routes/products.router.js";
+
+// Routers vistas
 import { router as viewsRouter } from "./routes/views.router.js";
-import { conectarDB } from "./config/db.js";
-import { config } from "./config/config.js";
-import { engine } from "express-handlebars";
-import cookieParser from "cookie-parser";
+
+import { logger } from "./middleware/log.js";
 import sessions from "express-session";
 import FileStore from "session-file-store";
 import MongoStore from "connect-mongo";
+
+const __filename = fileURLToPath(import.meta.url);
 import __dirname from "./utils.js";
-import path from "path";
-import passport from "passport";
-import { iniciarPassport } from "./config/passport.config.js";
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -30,19 +40,20 @@ app.use(express.static(path.join(__dirname, "/public")));
 app.use(logger);
 app.use(
   sessions({
-    secret: config.SECRET_SESSION,
+    secret: env.SECRET_SESSION,
     resave: true,
     saveUninitialized: true,
     saveUninitialized: true,
     store: MongoStore.create({
-      mongoUrl: config.MONGO_URL,
-      dbName: config.DB_NAME,
+      mongoUrl: env.MONGO_URL,
+      dbName: env.DB_NAME,
       //collectionName:"pruebas",
       ttl: 3600,
     }),
   })
 );
 
+// Handlebars
 app.engine("handlebars", engine());
 app.set("view engine", "handlebars");
 app.set("views", path.join(__dirname, "/views"));
@@ -64,8 +75,27 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ error: `Error: ${error.message}` });
 });
 
+// Middleware para pasar usuario a las vistas si está logueado
+app.use((req, res, next) => {
+  // Si el token está en cookie, lo decodificamos manualmente para mostrar en la UI
+  const jwt = req.cookies?.jwt;
+  if (jwt) {
+    try {
+      const payload = JSON.parse(
+        Buffer.from(jwt.split('.')[1], 'base64').toString('utf-8')
+      );
+      res.locals.user = payload;
+    } catch (err) {
+      res.locals.user = null;
+    }
+  } else {
+    res.locals.user = null;
+  }
+  next();
+});
+
 const server = app.listen(PORT, () => {
   console.log(`Server online en puerto ${PORT}`);
 });
 
-conectarDB(config.MONGO_URL, config.DB_NAME);
+conectarDB(env.MONGO_URL, env.DB_NAME);

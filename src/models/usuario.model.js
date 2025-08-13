@@ -1,18 +1,30 @@
 import mongoose from "mongoose";
 
-export const usuariosModelo=mongoose.model(
-    'usuarios',
-    new mongoose.Schema(
-        {
-            nombre: String, 
-            email: {
-                type: String, unique:true
-            }, 
-            apellido: String, 
-            password: String,
-        },
-        {
-            timestamps:true
-        }
-    )
-)
+export const usuariosModelo = mongoose.model(
+  "usuarios",
+  new mongoose.Schema(
+    {
+      first_name: { type: String, required: true, trim: true },
+      last_name: { type: String, required: true, trim: true },
+      email: {
+        type: String,
+        required: true,
+        unique: true,
+        index: true,
+        lowercase: true,
+        trim: true,
+      },
+      age: { type: Number, min: 0, default: 0 },
+      password: { type: String, required: true }, // hash bcrypt
+      cart: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "carts",
+        default: null,
+      },
+      role: { type: String, enum: ["user", "admin"], default: "user" },
+    },
+    {
+      timestamps: true,
+    }
+  )
+);
