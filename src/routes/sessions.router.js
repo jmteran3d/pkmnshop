@@ -194,7 +194,7 @@ router.get('/current', authJWT, async (req, res) => {
 });
 
 // Logout -> borra cookie
-router.post('/logout', (req, res) => {
+router.get('/logout', (req, res) => {
   res.clearCookie('jwt');
   return res.json({ status: 'success', message: 'Sesión cerrada' });
 });

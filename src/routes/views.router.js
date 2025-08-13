@@ -31,13 +31,16 @@ router.get('/login',(req,res)=>{
     })
 })
 
-router.get('/perfil', authJWT, (req,res)=>{
-
-    let {nombre, email}=req.session.user
+router.get('/perfil', authJWT, (req, res) => {
+    // req.user viene del JWT
+    const { first_name, last_name, email, age, role } = req.user;
 
     res.status(200).render('perfil', {
-        nombre, 
-        email, 
+        first_name,
+        last_name,
+        email,
+        age,
+        role,
         isLogin: true
-    })
-})
+    });
+});
