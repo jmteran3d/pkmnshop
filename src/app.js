@@ -15,6 +15,8 @@ import FileStore from "session-file-store";
 import MongoStore from "connect-mongo";
 import __dirname from "./utils.js";
 import path from "path";
+import passport from "passport";
+import { iniciarPassport } from "./config/passport.config.js";
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -52,6 +54,15 @@ app.use("/api/cookies", cookiesRouter);
 app.use("/api/sessions", sessionsRouter);
 app.use("/api/products", productsRouter);
 app.use("/", viewsRouter);
+
+// paso 2:
+iniciarPassport();
+app.use(passport.initialize());
+app.use(passport.session()); // solo si uso sessions
+app.use((error, req, res, next) => {
+  res.setHeader("Content-Type", "application/json");
+  return res.status(500).json({ error: `Error: ${error.message}` });
+});
 
 const server = app.listen(PORT, () => {
   console.log(`Server online en puerto ${PORT}`);
