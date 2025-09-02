@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { usuariosModelo } from "../models/usuario.model.js";
+import { usuariosModelo } from "../dao/models/usuario.model.js";
 import { auth, authJWT, authorizeRoles } from "../middleware/auth.js";
 import { hashPassword } from "../utils/hash.js";
 

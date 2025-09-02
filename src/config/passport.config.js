@@ -3,7 +3,7 @@ import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 // import {Strategy as LocalStrategy} from "passport-local"
 import local from "passport-local";
 import bcrypt from "bcrypt";
-import { usuariosModelo } from "../models/usuario.model.js";
+import { usuariosModelo } from "../dao/models/usuario.model.js";
 import { env } from './env.js';
 
 // Extrae JWT desde cookie httpOnly o desde Authorization: Bearer <token>

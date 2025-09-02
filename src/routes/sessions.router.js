@@ -1,7 +1,7 @@
 import { Router } from "express";
 import passport from "passport";
 import bcrypt from "bcrypt";
-import { usuariosModelo } from "../models/usuario.model.js";
+import { usuariosModelo } from "../dao/models/usuario.model.js";
 import { auth } from "../middleware/auth.js";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
