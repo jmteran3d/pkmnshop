@@ -199,23 +199,6 @@ router.get('/logout', (req, res) => {
   return res.json({ status: 'success', message: 'Sesión cerrada' });
 });
 
-
-
-// router.get("/logout", (req, res) => {
-//   req.session.destroy((error) => {
-//     if (error) {
-//       res.setHeader("Content-Type", "application/json");
-//       return res
-//         .status(500)
-//         .json({ error: `Error en proceso de logout... :(` });
-//     }
-
-//     // res.setHeader('Content-Type','application/json');
-//     // return res.status(200).json({payload:`Logout exitoso`});
-//     res.redirect("/login");
-//   });
-// });
-
 // Perfil protegido
 router.get("/perfil", passport.authenticate("jwt", { session: false, failureRedirect: "/login" }), (req, res) => {
   res.setHeader("Content-Type", "application/json");

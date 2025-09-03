@@ -1,6 +1,10 @@
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({
+    path:"./.env", 
+    override: true, 
+    quiet: true
+});
 
 export const env = {
   PORT: process.env.PORT || 3000,

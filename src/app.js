@@ -14,8 +14,8 @@ import { iniciarPassport } from "./config/passport.config.js";
 import { router as usuariosRouter } from "./routes/usuariosRouter.js";
 import { router as clientesRouter } from "./routes/clientesRouter.js";
 import { router as cookiesRouter } from "./routes/cookiesRouter.js";
-import { router as sessionsRouter } from "./routes/sessions.router.js";
-import { router as productsRouter } from "./routes/products.router.js";
+import { router as sessionsRouter } from "./routes/sessionsRouter.js";
+import { router as productsRouter } from "./routes/productsRouter.js";
 
 // Routers vistas
 import { router as viewsRouter } from "./routes/views.router.js";
