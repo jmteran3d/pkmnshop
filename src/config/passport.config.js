@@ -5,68 +5,31 @@ import bcrypt from "bcrypt";
 import { usuariosModelo } from "../dao/models/usuario.model.js";
 import { env } from './env.js';
 
-// Extrae JWT desde cookie httpOnly o desde Authorization: Bearer <token>
-const cookieExtractor = (req) => {
-  if (req && req.cookies && req.cookies.jwt) return req.cookies.jwt;
-  return null;
-};
+// Extrae JWT desde cookie httpOnly o Authorization header
+const cookieExtractor = (req) => req?.cookies?.[env.COOKIE_NAME] || null;
 
 export const iniciarPassport = () => {
   const extractors = [cookieExtractor, ExtractJwt.fromAuthHeaderAsBearerToken()];
-  // paso 1:
+
+  // Estrategia registro
   passport.use(
     "registro",
     new local.Strategy(
-      {
-        usernameField: "email",
-        // passwordField: "clave",
-        passReqToCallback: true,
-      },
+      { usernameField: "email", passReqToCallback: true },
       async (req, username, password, done) => {
         try {
-          let { nombre, apellido } = req.body;
-          if (!nombre || !apellido) {
-            return done(null, false); // fallo en validacion
-          }
+          const { first_name, last_name } = req.body;
+          if (!first_name || !last_name) return done(null, false);
 
-          // resto validaciones
-          password = bcrypt.hashSync(password, 10);
-          let nuevoUsuario = await usuariosModelo.create({
-            nombre,
-            apellido,
+          const hashedPassword = bcrypt.hashSync(password, 10);
+          const nuevoUsuario = await usuariosModelo.create({
+            first_name,
+            last_name,
             email: username,
-            password,
+            password: hashedPassword,
           });
 
-          return done(null, nuevoUsuario); // hay un usuario
-        } catch (error) {
-          return done(error); // ocurre un error
-        }
-      }
-    )
-  );
-
-  passport.use(
-    "login",
-    new local.Strategy(
-      {
-        usernameField: "email",
-      },
-      async (username, password, done) => {
-        try {
-          let usuario = await usuariosModelo
-            .findOne({ email: username })
-            .lean();
-          if (!usuario) {
-            return done(null, false);
-          }
-
-          if (!bcrypt.compareSync(password, usuario.password)) {
-            return done(null, false);
-          }
-
-          delete usuario.password; // borrar datos sensibles
-          return done(null, usuario);
+          return done(null, nuevoUsuario);
         } catch (error) {
           return done(error);
         }
@@ -74,18 +37,49 @@ export const iniciarPassport = () => {
     )
   );
 
+  // Estrategia login
   passport.use(
-    'jwt',
+    "login",
+    new local.Strategy(
+      { usernameField: "email" },
+      async (username, password, done) => {
+        try {
+          const usuario = await usuariosModelo.findOne({ email: username }).lean();
+          if (!usuario) return done(null, false);
+
+          if (!bcrypt.compareSync(password, usuario.password)) return done(null, false);
+
+          // eliminar campos sensibles
+          const safeUser = {
+            _id: usuario._id,
+            first_name: usuario.first_name,
+            last_name: usuario.last_name,
+            email: usuario.email,
+            role: usuario.role,
+            cart: usuario.cart,
+          };
+
+          return done(null, safeUser);
+        } catch (error) {
+          return done(error);
+        }
+      }
+    )
+  );
+
+  // Estrategia JWT
+  passport.use(
+    "jwt",
     new JwtStrategy(
-      {
-        secretOrKey: env.JWT_SECRET,
-        jwtFromRequest: ExtractJwt.fromExtractors(extractors)
-      },
+      { secretOrKey: env.JWT_SECRET, jwtFromRequest: ExtractJwt.fromExtractors(extractors) },
       async (payload, done) => {
         try {
-          // payload: { uid, email, role, ... }
-          const usuario = await usuariosModelo.findById(payload.uid).lean();
-          if (!usuario) return done(null, false, { message: 'Usuario no encontrado' });
+          const usuario = await usuariosModelo.findById(payload.uid)
+            .select("_id first_name last_name email role cart")
+            .lean();
+
+          if (!usuario) return done(null, false, { message: "Usuario no encontrado" });
+
           return done(null, usuario);
         } catch (err) {
           return done(err, false);
@@ -94,14 +88,7 @@ export const iniciarPassport = () => {
     )
   );
 
-  // paso 1' o 1b)   solo si uso sessions
-  passport.serializeUser((user, done) => {
-    return done(null, user);
-  });
-
-  passport.deserializeUser((user, done) => {
-    return done(null, user);
-  });
+  // Solo si usas sesiones
+  passport.serializeUser((user, done) => done(null, user));
+  passport.deserializeUser((user, done) => done(null, user));
 };
-
-

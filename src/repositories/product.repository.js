@@ -1,24 +1,24 @@
-import { ProductsDAO } from "../dao/ProductsDAO.js";
+import Product from "../dao/models/product.model.js";
 
 class ProductRepository {
-  async getProducts(filter, options) {
-    return await ProductsDAO.get(filter, options);
+  async getProducts(filter = {}, options = {}) {
+    return Product.paginate(filter, options);
   }
 
   async getProductById(id) {
-    return await ProductsDAO.getById(id);
+    return Product.findById(id).lean();
   }
 
   async createProduct(data) {
-    return await ProductsDAO.create(data);
+    return Product.create(data);
   }
 
   async updateProduct(id, data) {
-    return await ProductsDAO.update(id, data);
+    return Product.findByIdAndUpdate(id, data, { new: true });
   }
 
   async deleteProduct(id) {
-    return await ProductsDAO.delete(id);
+    return Product.findByIdAndDelete(id);
   }
 }
 

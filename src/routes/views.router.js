@@ -1,46 +1,37 @@
-import { Router } from 'express';
-import { auth, authJWT } from '../middleware/auth.js';
+import { Router } from "express";
+import { authJWT } from "../middleware/auth.js";
 
-export const router=Router()
+export const router = Router();
 
-router.get('/',(req,res)=>{
-    let isLogin=false
-    if(req.session.user) isLogin=true
+// Página principal
+router.get("/", (req, res) => {
+  res.render("home", { user: res.locals.user, isLogin: !!res.locals.user });
+});
 
-    res.status(200).render('home', {
-        isLogin
-    })
-})
+// Login
+router.get("/login", (req, res) => {
+  res.render("login", { isLogin: !!res.locals.user });
+});
 
-router.get('/registro',(req,res)=>{
-    let isLogin=false
-    if(req.session.user) isLogin=true
+// Registro
+router.get("/registro", (req, res) => {
+  res.render("registro", { isLogin: !!res.locals.user });
+});
 
-    res.status(200).render('registro', {
-        isLogin
-    })
-})
+// Perfil (protegido)
+router.get("/perfil", authJWT, (req, res) => {
+  const { first_name, last_name, email, age, role } = req.user;
+  res.render("perfil", {
+    user: { first_name, last_name, email, age, role },
+    isLogin: true
+  });
+});
 
-router.get('/login',(req,res)=>{
+// Otros endpoints (productos, carrito)
+router.get("/products", (req, res) => {
+  res.render("products", { user: res.locals.user, isLogin: !!res.locals.user });
+});
 
-    let isLogin=false
-    if(req.session.user) isLogin=true
-
-    res.status(200).render('login', {
-        isLogin
-    })
-})
-
-router.get('/perfil', authJWT, (req, res) => {
-    // req.user viene del JWT
-    const { first_name, last_name, email, age, role } = req.user;
-
-    res.status(200).render('perfil', {
-        first_name,
-        last_name,
-        email,
-        age,
-        role,
-        isLogin: true
-    });
+router.get("/cart/:cid", (req, res) => {
+  res.render("cart", { user: res.locals.user, cartId: req.params.cid, isLogin: !!res.locals.user });
 });

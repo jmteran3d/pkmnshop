@@ -15,20 +15,19 @@ export const checkoutCart = async ({ cartId, purchaserEmail }) => {
   const notPurchased = [];
   let amount = 0;
 
-  // Verificar stock y “reservar”
   for (const item of cart.products) {
-    const p = await products.findById(item.product._id);
+    const p = await products.getProductById(item.product._id); // corregido a getProductById
     if (!p || p.stock < item.quantity) {
       notPurchased.push({
         product: item.product._id,
         requested: item.quantity,
-        available: p ? p.stock : 0
+        available: p ? p.stock : 0,
       });
       continue;
     }
-    // Descontar stock
+
     p.stock -= item.quantity;
-    await p.save();
+    await products.updateProduct(p._id, { stock: p.stock }); // evitar usar p.save()
 
     const subtotal = item.quantity * p.price;
     amount += subtotal;
@@ -36,22 +35,21 @@ export const checkoutCart = async ({ cartId, purchaserEmail }) => {
       product: p._id,
       quantity: item.quantity,
       unitPrice: p.price,
-      subtotal
+      subtotal,
     });
   }
 
-  // Crear ticket (aunque sea compra parcial)
   const ticket = await tickets.create({
     code: uuid(),
     amount,
     purchaser: purchaserEmail,
     itemsPurchased: purchased,
-    itemsNotPurchased: notPurchased
+    itemsNotPurchased: notPurchased,
   });
 
-  // Dejar en el carrito sólo lo no comprado
-  const remaining = notPurchased.map(n => ({
-    product: n.product, quantity: n.requested
+  const remaining = notPurchased.map((n) => ({
+    product: n.product,
+    quantity: n.requested,
   }));
   await carts.setProducts(cartId, remaining);
 
